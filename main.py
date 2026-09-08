@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 from sqlalchemy.orm import Session
 
 from core.config import APP_ICON, APP_NAME, ensure_local_config
-from core.security import hash_password, verify_password
+from core.security import hash_password, password_needs_upgrade, verify_password
 from db.models import AppMeta, User
 from db.session import Base, SessionLocal, engine
 from ui.main_window import MainWindow
@@ -118,6 +118,9 @@ class LoginFrame(ttk.Frame):
             if not user or not verify_password(password, user.password_hash):
                 messagebox.showerror("Error", "Invalid username or password.")
                 return
+            if password_needs_upgrade(user.password_hash):
+                user.password_hash = hash_password(password)
+                db.commit()
         finally:
             db.close()
         self.event_generate("<<LoginSuccess>>", when="tail")
